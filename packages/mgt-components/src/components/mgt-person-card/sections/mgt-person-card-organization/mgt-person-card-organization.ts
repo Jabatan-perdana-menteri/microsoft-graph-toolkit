@@ -235,8 +235,6 @@ export class MgtPersonCardOrganization extends BasePersonCardSection {
               <div class="org-member__person">
                 <mgt-person
                   .personDetails=${person}
-                  .line2Property=${'jobTitle'}
-                  .line3Property=${'department'}
                   .fetchImage=${true}
                   .showPresence=${true}
                   .view=${ViewType.twolines}

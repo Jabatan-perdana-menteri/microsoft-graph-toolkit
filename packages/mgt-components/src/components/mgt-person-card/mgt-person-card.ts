@@ -29,8 +29,14 @@ import { MgtPersonCardConfig, MgtPersonCardState } from './mgt-person-card.types
 import { strings } from './strings';
 
 import '../sub-components/mgt-spinner/mgt-spinner';
+import { MgtFlyout } from '../sub-components/mgt-flyout/mgt-flyout';
 
 export * from './mgt-person-card.types';
+
+import { fluentTabs, fluentTab, fluentTabPanel, fluentButton, fluentTextField } from '@fluentui/web-components';
+import { registerFluentComponents } from '../../utils/FluentComponents';
+
+registerFluentComponents(fluentTabs, fluentTab, fluentTabPanel, fluentButton, fluentTextField);
 
 // tslint:disable-next-line:completed-docs
 interface MgtPersonCardStateHistory {
@@ -100,7 +106,6 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     }
 
     if (this.config.sections.mailMessages) {
-      scopes.push('Mail.Read');
       scopes.push('Mail.ReadBasic');
     }
 
@@ -374,6 +379,11 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     const historyState = this._history.pop();
     this._currentSection = null;
 
+    //resets to first tab being selected
+    const firstTab: HTMLElement = this.renderRoot.querySelector(`fluent-tab`) as HTMLElement;
+    if (firstTab) {
+      firstTab.click();
+    }
     this.state = historyState.state;
     this._personDetails = historyState.state;
     this.personImage = historyState.personImage;
@@ -428,10 +438,10 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     const navigationTemplate =
       this._history && this._history.length
         ? html`
-            <div class="nav">
-              <div class="nav__back" @click=${() => this.goBack()}>${getSvg(SvgIcon.Back)}</div>
-            </div>
-          `
+             <div class="nav">
+               <div class="nav__back" @click=${() => this.goBack()}>${getSvg(SvgIcon.Back)}</div>
+             </div>
+           `
         : null;
 
     // Check for a person-details template
@@ -441,22 +451,44 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     });
     if (!personDetailsTemplate) {
       const personTemplate = this.renderPerson();
-      const contactIconsTemplate = this.renderContactIcons(person);
 
       personDetailsTemplate = html`
-        ${personTemplate} ${contactIconsTemplate}
-      `;
+         ${personTemplate}
+       `;
     }
 
     const expandedDetailsTemplate = this.isExpanded ? this.renderExpandedDetails() : this.renderExpandedDetailsButton();
 
     return html`
-      <div class="root" dir=${this.direction}>
-        ${navigationTemplate}
-        <div class="person-details-container">${personDetailsTemplate}</div>
-        <div class="expanded-details-container">${expandedDetailsTemplate}</div>
-      </div>
-    `;
+       <div class="root" dir=${this.direction}>
+         ${navigationTemplate}
+         <div class="close-card-container">
+           <fluent-button appearance="lightweight" class="close-button" @click=${() => this.closeCard()} >
+               ${getSvg(SvgIcon.Close)}
+           </fluent-button>
+         </div>
+         <div class="person-details-container">${personDetailsTemplate}</div>
+         <div class="expanded-details-container">${expandedDetailsTemplate}</div>
+       </div>
+     `;
+  }
+
+  /**
+   * Render the state when no data is available.
+   *
+   * @protected
+   * @returns {TemplateResult}
+   * @memberof MgtPersonCard
+   */
+  protected closeCard() {
+    //reset tabs
+    this.updateCurrentSection(null);
+
+    const flyout = this.parentElement.parentElement as MgtFlyout;
+    if (flyout) {
+      flyout.close();
+    }
+    this.isExpanded = false;
   }
 
   /**
@@ -479,19 +511,25 @@ export class MgtPersonCard extends MgtTemplatedComponent {
    */
   protected renderPerson(): TemplateResult {
     const avatarSize = 'large';
+    const person = this.internalPersonDetails;
+    const contactIconsTemplate = this.renderContactIcons(person);
     return html`
-      <mgt-person
-        class="person-image"
-        .personDetails=${this.internalPersonDetails}
-        .personImage=${this.getImage()}
-        .personPresence=${this.personPresence}
-        .showPresence=${this.showPresence}
-        .avatarSize=${avatarSize}
-        .view=${ViewType.threelines}
-        .line2Property=${'jobTitle'}
-        .line3Property=${'department'}
-      ></mgt-person>
-    `;
+        <mgt-person
+          class="person-image"
+          .personDetails=${this.internalPersonDetails}
+          .personImage=${this.getImage()}
+          .personPresence=${this.personPresence}
+          .showPresence=${this.showPresence}
+          .avatarSize=${avatarSize}
+          .view=${ViewType.fourlines}
+        >
+        <template data-type="line4">
+            <div>
+              ${contactIconsTemplate}
+            </div>
+          </template>
+        </mgt-person>
+      `;
   }
 
   /**
@@ -508,8 +546,8 @@ export class MgtPersonCard extends MgtTemplatedComponent {
       return;
     }
     return html`
-      <div class="department">${person.department}</div>
-    `;
+       <div class="department">${person.department}</div>
+     `;
   }
 
   /**
@@ -520,52 +558,54 @@ export class MgtPersonCard extends MgtTemplatedComponent {
    * @memberof MgtPersonCard
    */
   protected renderContactIcons(person?: IDynamicPerson): TemplateResult {
-    if (this.isExpanded) {
-      return;
-    }
+    // if (this.isExpanded) {
+    //   return;
+    // }
 
-    person = person || this.internalPersonDetails;
+    person = person || this.internalPersonDetails || this.personDetails;
     const userPerson = person as User;
 
     // Email
     let email: TemplateResult;
     if (getEmailFromGraphEntity(person)) {
       email = html`
-        <div class="icon" @click=${() => this.emailUser()} tabindex=0>
+         <div class="icon" @click=${() => this.emailUser()} tabindex=0>
           ${getSvg(SvgIcon.SmallEmail)}
-          <span>${this.strings.sendEmailLinkSubtitle}</span>
         </div>
-      `;
+       `;
     }
 
     // Chat
     let chat: TemplateResult;
     if (userPerson.userPrincipalName) {
       chat = html`
-        <div class="icon" @click=${() => this.chatUser()} tabindex=0>
+         <div class="icon" @click=${() => this.chatUser()} tabindex=0>
           ${getSvg(SvgIcon.SmallChat)}
-          <span>${this.strings.startChatLinkSubtitle}</span>
         </div>
-      `;
+       `;
     }
 
     // Video
     let video: TemplateResult;
-    if (userPerson.userPrincipalName) {
-      // Change to video call api URL when available
-      video = html`
-        <div class="icon" @click=${() => this.chatUser()} tabindex=0>
+    video = html`
+       <div class="icon" @click=${() => this.videoCallUser()} tabindex=0>
           ${getSvg(SvgIcon.Video)}
-          <span>${this.strings.startVideoLinkSubtitle}</span>
         </div>
-      `;
-    }
+     `;
 
-    return html`
-      <div class="base-icons">
-        ${email} ${chat} ${video}
+    // Phone
+    let phone: TemplateResult;
+    phone = html`
+      <div class="icon" @click=${() => this.callUser()} tabindex=0>
+       ${getSvg(SvgIcon.Phone)}
       </div>
     `;
+
+    return html`
+       <div class="base-icons">
+         ${email} ${chat} ${video} ${phone}
+       </div>
+     `;
   }
 
   /**
@@ -577,12 +617,11 @@ export class MgtPersonCard extends MgtTemplatedComponent {
    */
   protected renderExpandedDetailsButton(): TemplateResult {
     return html`
-      <div class="expanded-details-button" @click=${() => this.showExpandedDetails()} @keydown=${
-      this.handleKeyDown
-    } @ tabindex=0>
-        ${getSvg(SvgIcon.ExpandDown)}
-      </div>
-    `;
+       <div class="expanded-details-button" @click=${() => this.showExpandedDetails()} @keydown=${(e: KeyboardEvent) =>
+      this.handleKeyDown(e)} tabindex=0>
+         ${getSvg(SvgIcon.ExpandDown)}
+       </div>
+     `;
   }
 
   /**
@@ -596,10 +635,10 @@ export class MgtPersonCard extends MgtTemplatedComponent {
   protected renderExpandedDetails(person?: IDynamicPerson): TemplateResult {
     if (!this.state && this.isStateLoading) {
       return html`
-        <div class="loading">
-          <mgt-spinner></mgt-spinner>
-        </div>
-      `;
+         <div class="loading">
+           <mgt-spinner></mgt-spinner>
+         </div>
+       `;
     }
     // load sections when details are expanded
     // when not singed in
@@ -611,16 +650,14 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     person = person || this.internalPersonDetails;
 
     const sectionNavTemplate = this.renderSectionNavigation();
-    const currentSectionTemplate = this.renderCurrentSection();
 
     return html`
-      <div class="section-nav">
-        ${sectionNavTemplate}
-      </div>
-      <div class="section-host" @wheel=${(e: WheelEvent) => this.handleSectionScroll(e)} tabindex=0>
-        ${currentSectionTemplate}
-      </div>
-    `;
+       <div class="section-nav">
+         ${sectionNavTemplate}
+       </div>
+       <div class="section-host" @wheel=${(e: WheelEvent) => this.handleSectionScroll(e)}>
+       </div>
+     `;
   }
 
   /**
@@ -637,27 +674,48 @@ export class MgtPersonCard extends MgtTemplatedComponent {
 
     const currentSectionIndex = this._currentSection ? this.sections.indexOf(this._currentSection) : -1;
 
-    const navIcons = this.sections.map((section, i, a) => {
+    const additionalSectionTemplates = this.sections.map((section, i) => {
+      let name = section.tagName.toLowerCase();
       const classes = classMap({
         active: i === currentSectionIndex,
         'section-nav__icon': true
       });
       return html`
-        <button tabindex=0 class=${classes} @click=${() =>
-        this.updateCurrentSection(section)}>${section.renderIcon()}</button>
-      `;
+         <fluent-tab id="${name}-Tab" class=${classes}
+           slot="tab" @keyup="${() => this.updateCurrentSection(section)}" @click=${() =>
+        this.updateCurrentSection(section)}>${section.renderIcon()}
+         </fluent-tab>
+       `;
+    });
+
+    const additionalPanelTemplates = this.sections.map((section, i) => {
+      return html`
+         <fluent-tab-panel  slot="tabpanel">
+               <div class="inserted">${this._currentSection ? section.asFullView() : null}</div>
+         </fluent-tab-panel>
+       `;
     });
 
     const overviewClasses = classMap({
       active: currentSectionIndex === -1,
-      'section-nav__icon': true
+      'section-nav__icon': true,
+      overviewTab: true
     });
+
     return html`
-      <button tabindex=0 class=${overviewClasses} @click=${() => this.updateCurrentSection(null)}>
-        ${getSvg(SvgIcon.Overview)}
-      </button>
-      ${navIcons}
-    `;
+         <fluent-tabs  orientation="horizontal" activeindicator  @wheel=${(e: WheelEvent) =>
+           this.handleSectionScroll(e)}> 
+           <fluent-tab class="${overviewClasses}"  slot="tab" @keyup="${() =>
+      this.updateCurrentSection(null)}" @click=${() => this.updateCurrentSection(null)}>
+             <div>${getSvg(SvgIcon.Overview)}</div>
+           </fluent-tab>
+           ${additionalSectionTemplates}
+           <fluent-tab-panel slot="tabpanel" >
+             <div class="overview-panel">${!this._currentSection ? this.renderOverviewSection() : null}</div>
+           </fluent-tab-panel>
+           ${additionalPanelTemplates}
+       </fluent-tabs>
+     `;
   }
 
   /**
@@ -670,18 +728,17 @@ export class MgtPersonCard extends MgtTemplatedComponent {
   protected renderOverviewSection(): TemplateResult {
     const compactTemplates = this.sections.map(
       section => html`
-        <div class="section">
-          <div class="section__header">
-            <div class="section__title">${section.displayName}</div>
-            <a class="section__show-more" tabindex=0 @keydown=${e =>
-              e.keyCode === 13 ? this.updateCurrentSection(section) : ''} @click=${() =>
-        this.updateCurrentSection(section)}
-              >${this.strings.showMoreSectionButton}</a
-            >
-          </div>
-          <div class="section__content">${section.asCompactView()}</div>
-        </div>
-      `
+         <div class="section">
+           <div class="section__header">
+             <div class="section__title">${section.displayName}</div>
+               <fluent-button appearance="lightweight" class="section__show-more" @click=${() =>
+                 this.updateCurrentSection(section)}>
+                 ${this.strings.showMoreSectionButton}
+               </fluent-button>
+           </div>
+           <div class="section__content">${section.asCompactView()}</div>
+         </div>
+       `
     );
 
     const additionalDetails = this.renderTemplate('additional-details', {
@@ -694,38 +751,43 @@ export class MgtPersonCard extends MgtTemplatedComponent {
         1,
         0,
         html`
-          <div class="section">
-            <div class="additional-details">${additionalDetails}</div>
-          </div>
-        `
+           <div class="section">
+             <div class="additional-details">${additionalDetails}</div>
+           </div>
+         `
       );
     }
 
+    // To be included when support for direct messaging is added
+    // ${this.internalPersonDetails.id !== this._me.id && MgtPersonCard.config.isSendMessageVisible
+    //   ? html`
+    //       <div class="quick-message">
+    //         <input
+    //           type="text"
+    //           class="quick-message__input"
+    //           placeholder="Message ${this.internalPersonDetails.displayName}"
+    //           .value=${this._chatInput}
+    //           @input=${(e: Event) => {
+    //             this._chatInput = (e.target as HTMLInputElement).value;
+    //           }}
+    //         />
+    //         <button class="quick-message__send" @click=${() => this.sendQuickMessage()}>
+    //           ${getSvg(SvgIcon.Send)}
+    //         </button>
+    //       </div>
+
+    // Add to sections
+    // <div class="message-section">
+    //  ${this.renderMessagingSection()}
+    //  </div>
+    //     `
+    //   : null}
+
     return html`
-    ${
-      this.internalPersonDetails.id !== this._me.id && MgtPersonCard.config.isSendMessageVisible
-        ? html`
-          <div class="quick-message">
-            <input
-              type="text"
-              class="quick-message__input"
-              placeholder=${this.strings.quickMessagePlaceholder}
-              .value=${this._chatInput}
-              @input=${(e: Event) => {
-                this._chatInput = (e.target as HTMLInputElement).value;
-              }}
-            />
-            <button class="quick-message__send" @click=${() => this.sendQuickMessage()}>
-              ${getSvg(SvgIcon.Send)}
-            </button>
-          </div>
-        `
-        : null
-    }
-      <div class="sections">
-        ${compactTemplates}
-      </div>
-    `;
+       <div class="sections">
+         ${compactTemplates}
+       </div>
+     `;
   }
 
   /**
@@ -742,8 +804,8 @@ export class MgtPersonCard extends MgtTemplatedComponent {
 
     if (this.sections.length === 1 && !this.hasTemplate('additional-details')) {
       return html`
-        ${this.sections[0].asFullView()}
-      `;
+         ${this.sections[0].asFullView()}
+       `;
     }
 
     if (!this._currentSection) {
@@ -751,9 +813,30 @@ export class MgtPersonCard extends MgtTemplatedComponent {
     }
 
     return html`
-      ${this._currentSection.asFullView()}
-    `;
+       ${this._currentSection.asFullView()}
+     `;
   }
+
+  // /**
+  //  * Render the messaging section.
+  //  *
+  //  * @protected
+  //  * @returns {TemplateResult}
+  //  * @memberof MgtPersonCard
+  //  */
+  // protected renderMessagingSection(): TemplateResult {
+  //   return html`
+  //        <fluent-text-field appearance="filled" placeholder="Message ${this.internalPersonDetails.displayName}"
+  //          .value=${this._chatInput}
+  //          @input=${(e: Event) => {
+  //            this._chatInput = (e.target as HTMLInputElement).value;
+  //          }}>
+  //        </fluent-text-field>
+  //        <span class="send-message-icon" @click=${() => this.sendQuickMessage()}>
+  //             ${getSvg(SvgIcon.Send)}
+  //        </span>
+  //      `;
+  // }
 
   /**
    * load state into the component
@@ -774,10 +857,8 @@ export class MgtPersonCard extends MgtTemplatedComponent {
         parent = parent.parentElement;
       }
 
-      let parentPerson = (parent as MgtPerson).personDetails || parent['personDetailsInternal'];
-
-      if (parent && parentPerson) {
-        this.personDetails = parentPerson;
+      if (parent && (parent as MgtPerson).personDetails) {
+        this.personDetails = (parent as MgtPerson).personDetails;
         this.personImage = (parent as MgtPerson).personImage;
       }
     }
@@ -952,6 +1033,33 @@ export class MgtPersonCard extends MgtTemplatedComponent {
   }
 
   /**
+   * Initiate a teams call with video with a user via deeplink.
+   *
+   * @protected
+   * @memberof MgtPersonCard
+   */
+  protected videoCallUser() {
+    const user = this.personDetails as User;
+    if (user && user.userPrincipalName) {
+      const users: string = user.userPrincipalName;
+
+      let url = `https://teams.microsoft.com/l/call/0/0?users=${users}&withVideo=true`;
+
+      const openWindow = () => window.open(url, '_blank', 'noreferrer');
+
+      if (TeamsHelper.isAvailable) {
+        TeamsHelper.executeDeepLink(url, (status: boolean) => {
+          if (!status) {
+            openWindow();
+          }
+        });
+      } else {
+        openWindow();
+      }
+    }
+  }
+
+  /**
    * Display the expanded details panel.
    *
    * @protected
@@ -1046,21 +1154,31 @@ export class MgtPersonCard extends MgtTemplatedComponent {
   }
 
   private updateCurrentSection(section) {
-    const sectionHost = this.renderRoot.querySelector('.section-host');
-    sectionHost.scrollTop = 0;
-
+    if (section) {
+      const sectionName = section.tagName.toLowerCase();
+      const tabs: HTMLElement = this.renderRoot.querySelector(`#${sectionName}-Tab`) as HTMLElement;
+      tabs.click();
+    }
+    const panels = this.renderRoot.querySelectorAll('fluent-tab-panel');
+    for (let i = 0; i < panels.length; i++) {
+      let target = panels[i] as HTMLElement;
+      target.scrollTop = 0;
+    }
     this._currentSection = section;
     this.requestUpdate();
   }
 
   private handleSectionScroll(e: WheelEvent) {
-    const target = this.renderRoot.querySelector('.section-host') as HTMLElement;
-    if (target) {
-      if (
-        !(e.deltaY < 0 && target.scrollTop === 0) &&
-        !(e.deltaY > 0 && target.clientHeight + target.scrollTop >= target.scrollHeight - 1)
-      ) {
-        e.stopPropagation();
+    let panels = this.renderRoot.querySelectorAll('fluent-tab-panel');
+    for (let i = 0; i < panels.length; i++) {
+      let target = panels[i] as HTMLElement;
+      if (target) {
+        if (
+          !(e.deltaY < 0 && target.scrollTop === 0) &&
+          !(e.deltaY > 0 && target.clientHeight + target.scrollTop >= target.scrollHeight - 1)
+        ) {
+          e.stopPropagation();
+        }
       }
     }
   }
@@ -1068,7 +1186,7 @@ export class MgtPersonCard extends MgtTemplatedComponent {
   private handleKeyDown(e: KeyboardEvent) {
     //enter activates person-card
     if (e) {
-      if (e.keyCode === 13) {
+      if (e.code === 'Enter') {
         this.showExpandedDetails();
       }
     }
