@@ -9,6 +9,8 @@
 @import '../../../../styles/shared-styles.scss';
 @import '../../../../styles/shared-sass-variables.scss';
 
+$person-card-active-org-member-color: var(--person-card-active-org-member-color, #{$commblue_primary});
+
 :host {
   position: relative;
   user-select: none;
@@ -160,5 +162,23 @@
       filter: FlipH;
       -ms-filter: 'FlipH';
     }
+  }
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: dark) {
+  :host svg,
+  :host svg > path {
+    fill: rgb(255, 255, 255) !important;
+    fill-rule: nonzero !important;
+    clip-rule: nonzero !important;
+  }
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  :host svg,
+  :host svg > path {
+    fill: rgb(0, 0, 0) !important;
+    fill-rule: nonzero !important;
+    clip-rule: nonzero !important;
   }
 }

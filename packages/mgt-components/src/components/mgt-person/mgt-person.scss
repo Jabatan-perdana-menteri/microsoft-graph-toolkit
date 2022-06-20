@@ -365,7 +365,9 @@ mgt-person .person-root {
         left: -100%;
         margin: auto;
         height: 100%;
-        width: auto;
+        width: 100%;
+        object-fit: cover;
+        object-position: top;
         &:focus() {
           outline: none;
         }
@@ -666,5 +668,27 @@ mgt-person .vertical {
         margin-right: auto;
       }
     }
+  }
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: dark) {
+  :host svg,
+  :host svg > path,
+  mgt-person svg,
+  mgt-person svg > path {
+    fill: rgb(255, 255, 255) !important;
+    fill-rule: nonzero !important;
+    clip-rule: nonzero !important;
+  }
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: dark) {
+  :host svg,
+  :host svg > path,
+  mgt-person svg,
+  mgt-person svg > path {
+    fill: rgb(0, 0, 0) !important;
+    fill-rule: nonzero !important;
+    clip-rule: nonzero !important;
   }
 }
