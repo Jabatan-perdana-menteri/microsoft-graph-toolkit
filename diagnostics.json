@@ -1,0 +1,108 @@
+{
+	"browserInfo": {
+		"success": true,
+		"details": {
+			"browserName": "Firefox",
+			"OSName": "Windows",
+			"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0"
+		}
+	},
+	"fetchManifest": {
+		"success": true,
+		"status": 200,
+		"statusText": "OK",
+		"details": "Manifest was successfully retrieved with a status of 200. Cosmos DB is available."
+	},
+	"clientSideDependencyEndpoints": {
+		"success": true,
+		"details": [
+			{
+				"name": "Azure Resource Manager",
+				"uri": "https://management.azure.com/",
+				"status": 400,
+				"statusText": "Bad Request"
+			},
+			{
+				"name": "Hosting Service",
+				"uri": "https://afd.hosting.portal.azure.net/api/diagnostics",
+				"status": 200,
+				"statusText": "OK"
+			},
+			{
+				"name": "Third Party Hosting Service",
+				"uri": "https://hosting.partners.azure.net/api/diagnostics",
+				"status": 200,
+				"statusText": "OK"
+			}
+		]
+	},
+	"serviceHealthEndpoints": {
+		"success": true,
+		"details": [
+			{
+				"name": "Azure Resource Manager",
+				"uri": "https://management.azure.com/",
+				"status": 400,
+				"statusText": "Bad Request"
+			},
+			{
+				"name": "Microsoft Graph",
+				"uri": "https://graph.microsoft.com/",
+				"status": 405,
+				"statusText": "Method Not Allowed"
+			},
+			{
+				"name": "Azure Active Directory",
+				"uri": "https://login.microsoftonline.com/",
+				"status": 200,
+				"statusText": "OK"
+			},
+			{
+				"name": "Insights",
+				"uri": "https://insights1.exp.azure.com/",
+				"status": 200,
+				"statusText": "OK"
+			},
+			{
+				"name": "Graph",
+				"uri": "https://graph.windows.net/",
+				"status": 400,
+				"statusText": "Bad Request"
+			},
+			{
+				"name": "Azure Email Orchestration",
+				"uri": "https://emails-stable.azure.net/",
+				"status": 200,
+				"statusText": "OK"
+			}
+		]
+	},
+	"loadIFrame": {
+		"success": true,
+		"details": "Loading an iframe was successful."
+	},
+	"localStorage": {
+		"success": true,
+		"details": "Read/write to storage was successful."
+	},
+	"sessionStorage": {
+		"success": true,
+		"details": "Read/write to storage was successful."
+	},
+	"webWorkers": {
+		"success": true,
+		"details": "All web workers responded successfully."
+	},
+	"hostingService": {
+		"success": false,
+		"details": "No endpoints were found for diagnostics."
+	},
+	"cookiePersistence": {
+		"success": true,
+		"details": "Cookies were received by server and not stripped during request."
+	},
+	"requestBodyPersistence": {
+		"success": true,
+		"details": "Request body was not stripped while making a POST request to the server."
+	}
+}
